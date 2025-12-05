@@ -1,0 +1,9 @@
+Flask>=2.0.0
+flask-cors>=4.0.0
+spacy>=3.0.0
+pdfminer.six>=20201018
+python-docx>=0.8.10
+wordcloud>=1.8.1
+matplotlib>=3.0.0
+pandas>=1.0.0
+SQLAlchemy>=2.0.0

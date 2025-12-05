@@ -1,0 +1,60 @@
+/* Global Styles */
+.login-container {
+  position: relative;
+}
+
+.floating-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-box {
+  position: relative;
+  z-index: 10;
+}
+
+/* Spinner styling for loading state */
+.spinner-border {
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  border-right-color: #667eea;
+  animation: spin 0.6s linear infinite;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-box {
+    padding: 40px 24px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 20px !important;
+  }
+}
+
+/* Utility classes for Bootstrap compatibility */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

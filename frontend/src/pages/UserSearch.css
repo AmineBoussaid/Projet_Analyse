@@ -1,0 +1,263 @@
+.user-search {
+  padding: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.search-form {
+  margin-bottom: 40px;
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px 24px;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.15);
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.search-wrapper:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.25);
+}
+
+.search-wrapper svg {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.search-field {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+}
+
+.search-field::placeholder {
+  color: #ccc;
+}
+
+.search-submit {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.search-submit:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.results-info {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f0f3ff;
+  border-radius: 8px;
+  color: #667eea;
+  font-size: 14px;
+}
+
+.error-message {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fee;
+  border-radius: 8px;
+  color: #c33;
+  border: 1px solid #fcc;
+  font-size: 14px;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f0f0f0;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  margin-top: 16px;
+  color: #999;
+  font-size: 14px;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.result-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.result-item:hover {
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.result-icon {
+  width: 48px;
+  height: 48px;
+  background: #f0f3ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.result-content {
+  flex: 1;
+}
+
+.result-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.result-text {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #999;
+}
+
+.result-type {
+  background: #f0f3ff;
+  color: #667eea;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.result-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.result-action {
+  padding: 10px 20px;
+  background: #f0f3ff;
+  color: #667eea;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.result-action:hover {
+  background: #667eea;
+  color: white;
+}
+
+.no-results,
+.initial-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.no-results-icon,
+.initial-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.no-results h2,
+.initial-state h2 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.no-results p,
+.initial-state p {
+  margin: 0;
+  font-size: 14px;
+  color: #999;
+}
+
+.suggestion {
+  font-size: 13px;
+  color: #bbb;
+  margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-search {
+    padding: 20px;
+  }
+
+  .search-wrapper {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-field {
+    width: 100%;
+  }
+
+  .search-submit {
+    width: 100%;
+  }
+
+  .result-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .result-action {
+    width: 100%;
+  }
+}
