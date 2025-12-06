@@ -1,57 +1,40 @@
-from flask import Flask, request, jsonify, send_file
+import warnings
+
+# Silence pkg_resources deprecation warning emitted by stopwordsiso before any imports trigger it
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API",
+    category=UserWarning,
+    module="stopwordsiso._core",
+)
+
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, json
-from processors import process_and_index, extract_text
-import models
-from functools import wraps
+from controllers.document_controller import document_bp
+from pathlib import Path
+import os
+import json
 from datetime import datetime
 
 # Config
-UPLOAD_FOLDER = os.path.join('data', 'uploads')
-DATA_JSON = 'data/texts.json'
 SECRET_KEY = 'dev-secret-key-change-in-prod'
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs('data', exist_ok=True)
+# Create required data directories
+os.makedirs('data/corpus', exist_ok=True)
+os.makedirs('data/processed', exist_ok=True)
 
-# Initialize DB
-try:
-    models.init_db()
-except Exception as e:
-    print(f"DB init warning: {e}")
+# Register blueprints
+app.register_blueprint(document_bp, url_prefix="/api")
 
+# =====================================
+# Authentication Routes
+# =====================================
 
-def check_auth(f):
-    """Decorator to check role from request header or session."""
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        role = request.headers.get('X-Role', None)
-        if not role:
-            return jsonify({'error': 'Unauthorized'}), 401
-        if role not in ('admin', 'user'):
-            return jsonify({'error': 'Invalid role'}), 401
-        return f(*args, **kwargs)
-    return wrapped
-
-
-def check_admin(f):
-    """Decorator to check admin role."""
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        role = request.headers.get('X-Role', None)
-        if role != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
-        return f(*args, **kwargs)
-    return wrapped
-
-
-# === Auth Routes ===
 @app.route('/api/login', methods=['POST'])
 def login():
     """Fake login: just accept role selection."""
@@ -68,449 +51,424 @@ def logout():
     return jsonify({'message': 'Logged out'})
 
 
-# === Admin Routes ===
-@app.route('/api/documents', methods=['GET'])
-def public_documents():
-    """Public endpoint returning all document metadata for frontend (no auth)."""
-    data = []
-    if os.path.exists(DATA_JSON):
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
+# =====================================
+# Health Check
+# =====================================
 
-    out = []
-    for item in data:
-        out.append({
-            'name': item.get('filename'),
-            'filename': item.get('filename'),
-            'path': item.get('path'),
-            'type': item.get('type'),
-            'size': item.get('size'),
-            'num_pages': item.get('pages') or item.get('num_pages'),
-            'word_count': item.get('word_count'),
-            'characters': item.get('characters') or item.get('char_count'),
-            'date_import': item.get('imported_at') or item.get('date_import'),
-            'corpus_relpath': item.get('path')
-        })
-    return jsonify(out)
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Health check endpoint."""
+    return jsonify({'status': 'ok', 'message': 'Backend is running'})
 
+
+# =====================================
+# Admin Stats Alias (for old frontend routes)
+# =====================================
 
 @app.route('/api/admin/stats', methods=['GET'])
-@check_admin
 def admin_stats():
-    """Admin stats endpoint."""
-    data = []
-    if os.path.exists(DATA_JSON):
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
+    """Admin stats endpoint - delegates to visualisation service."""
+    from services.visualisation_service import compute_visualisation_data, get_all_imports, stats_imports_by_date
     
-    total_docs = len(data)
-    total_size = sum(d.get('size', 0) for d in data)
-    total_words = sum(d.get('word_count', 0) for d in data)
-    last_import = None
-    for d in data:
-        imported = d.get('imported_at')
-        if imported:
-            try:
-                dt = datetime.fromisoformat(imported)
-                if last_import is None or dt > last_import:
-                    last_import = dt
-            except Exception:
-                pass
+    # Get visualisation data
+    viz_data = compute_visualisation_data()
     
+    # Get imports stats
+    imports = get_all_imports()
+    imports_stats = stats_imports_by_date(imports)
+    
+    # Build by_date structure for compatibility
+    by_date_dict = {}
+    for stat in imports_stats:
+        by_date_dict[stat['date']] = stat.get('count', 0)
+    
+    if by_date_dict:
+        sorted_items = sorted(by_date_dict.items())
+        by_date = {'labels': [k for k, _ in sorted_items], 'data': [v for _, v in sorted_items]}
+    else:
+        by_date = {'labels': [], 'data': []}
+    
+    # Build by_type structure
     by_type = {}
-    for d in data:
-        ext = os.path.splitext(d.get('filename', ''))[1].lstrip('.').lower()
-        by_type[ext] = by_type.get(ext, 0) + 1
-
-    # files by date (count per day)
-    by_date_counts = {}
-    for d in data:
-        imported = d.get('imported_at')
-        if imported:
-            try:
-                dt = datetime.fromisoformat(imported)
-                key = dt.date().isoformat()
-                by_date_counts[key] = by_date_counts.get(key, 0) + 1
-            except Exception:
-                pass
-
-    # Prepare by_date structure sorted by date
-    if by_date_counts:
-        sorted_items = sorted(by_date_counts.items())
-        by_date = { 'labels': [k for k,_ in sorted_items], 'data': [v for _,v in sorted_items] }
-    else:
-        by_date = { 'labels': [], 'data': [] }
+    for word, count in viz_data.get('top_types', []):
+        by_type[word] = count
     
-    stats = {
-        'total_docs': total_docs,
-        'total_size': total_size,
-        'total_words': total_words,
-        'last_import': last_import.isoformat() if last_import else None,
-        'by_type': by_type,
-        'by_date': by_date
-    }
-    return jsonify(stats)
-
-
-@app.route('/api/admin/files', methods=['GET'])
-@check_admin
-def admin_files():
-    """Get list of indexed files with optional search."""
-    q = request.args.get('q', '').strip().lower()
-    data = []
-    
-    if os.path.exists(DATA_JSON):
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
-    
-    if q:
-        filtered = []
-        for item in data:
-            if q in item.get('filename', '').lower() or q in json.dumps(item.get('lemmas', {})).lower():
-                filtered.append(item)
-        data = filtered
-    
-    return jsonify(data)
-
-
-@app.route('/api/admin/upload', methods=['POST'])
-@check_admin
-def upload():
-    """Upload files/folders and process them."""
-    files = request.files.getlist('files')
-    if not files:
-        return jsonify({'error': 'No files provided'}), 400
-    
-    saved_paths = []
-    for f in files:
-        if not f or f.filename == '':
-            continue
-        
-        # Normalize filename
-        fname = f.filename.replace('\\', '/').lstrip('/')
-        dest = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-        parent = os.path.dirname(dest)
-        
-        if parent and not os.path.exists(parent):
-            os.makedirs(parent, exist_ok=True)
-        
-        try:
-            f.save(dest)
-            saved_paths.append(dest)
-        except Exception:
-            base = os.path.basename(fname)
-            dest2 = os.path.join(app.config['UPLOAD_FOLDER'], base)
-            f.save(dest2)
-            saved_paths.append(dest2)
-    
-    # Filter by selected types
-    types = request.form.getlist('types')
-    if types:
-        types = [t.lower().lstrip('.') for t in types]
-        filtered = [p for p in saved_paths if os.path.splitext(p)[1].lower().lstrip('.') in types]
-    else:
-        filtered = saved_paths
-    
-    # Determine whether to save to main index or temporary (save=false)
-    save_flag = request.form.get('save', 'true').lower() != 'false'
-    
-    # Use a temporary file for the new processing to avoid overwriting the main index immediately
-    temp_json = os.path.join('data', 'temp_processing.json')
-    
-    # Process and index (writes to temp_json)
-    result = process_and_index(filtered, temp_json)
-    new_items = result.get('indexed', [])
-
-    # Save to DB (best-effort) only if save_flag True
-    if save_flag:
-        try:
-            models.save_indexed(new_items)
-        except Exception as e:
-            print(f"DB save warning: {e}")
-        
-        # Merge with existing DATA_JSON
-        existing_data = []
-        if os.path.exists(DATA_JSON):
-            try:
-                with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                    existing_data = json.load(f)
-            except Exception:
-                existing_data = []
-        
-        # Create a dict of existing items keyed by path to avoid duplicates
-        # We use path as unique identifier
-        data_map = {item.get('path'): item for item in existing_data}
-        
-        # Update/Add new items
-        for item in new_items:
-            data_map[item.get('path')] = item
-            
-        # Convert back to list
-        merged_data = list(data_map.values())
-        
-        # Write back to DATA_JSON
-        try:
-            with open(DATA_JSON, 'w', encoding='utf-8') as f:
-                json.dump(merged_data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"JSON save error: {e}")
-            
-        # Update result summary to reflect total (optional, but maybe confusing if we return total stats)
-        # For the response, we probably want to show stats of *just uploaded* files, which 'result' already has.
-    
-    # Return per-file details as well
-    files_info = []
-    for item in new_items:
-        files_info.append({
-            'filename': item.get('filename'),
-            'path': item.get('path'),
-            'size': item.get('size'),
-            'type': item.get('type'),
-            'pages': item.get('pages'),
-            'characters': item.get('characters'),
-            'word_count': item.get('word_count')
-        })
     return jsonify({
-        'message': 'Files processed successfully',
-        'summary': result.get('summary'),
-        'top': result.get('top'),
-        'wordcloud': result.get('wordcloud'),
-        'files': files_info
+        'total_docs': viz_data.get('num_files', 0),
+        'total_words': viz_data.get('total_words', 0),
+        'total_size': round(viz_data.get('total_size_mo', 0) * 1024 * 1024),  # Convert back to bytes
+        'last_import': viz_data.get('last_import_date', 'Aucun'),
+        'by_type': by_type,
+        'by_date': by_date,
+        'top_words': viz_data.get('top_words', [])
     })
 
 
-
-@app.route('/api/admin/file_stats', methods=['GET'])
-@check_admin
-def file_stats():
-    """Return per-file detailed statistics (lemmas and counts).
-    If file is present in the JSON index, return its lemmas and metadata.
-    """
-    filename = request.args.get('filename')
-    if not filename:
-        return jsonify({'error': 'filename required'}), 400
-
-    data = []
-    if os.path.exists(DATA_JSON):
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
-
-    for item in data:
-        if item.get('filename') == filename:
-            return jsonify({
-                'filename': item.get('filename'),
-                'path': item.get('path'),
-                'size': item.get('size'),
-                'type': item.get('type'),
-                'pages': item.get('pages'),
-                'characters': item.get('characters'),
-                'word_count': item.get('word_count'),
-                'lemmas': item.get('lemmas'),
-                'text_sample': item.get('text_sample')
-            })
-
-    return jsonify({'error': 'File not found in index'}), 404
-
-
-@app.route('/api/admin/view', methods=['GET'])
-@check_admin
-def view_file():
-    """Return full extracted text for a file (search in uploads or index)."""
-    filename = request.args.get('filename')
-    if not filename:
-        return jsonify({'error': 'filename required'}), 400
-
-    # Search in index
-    data = []
-    if os.path.exists(DATA_JSON):
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
-
-    for item in data:
-        if item.get('filename') == filename:
-            path = item.get('path')
-            text = ''
+@app.route('/api/admin/files', methods=['GET'])
+def admin_files():
+    """Get list of indexed files with optional search - delegates to /api/documents"""
+    q = request.args.get('q', '').strip().lower()
+    
+    metadata_file = Path("data/processed/metadata.json")
+    if not metadata_file.exists():
+        return jsonify([])
+    
+    try:
+        with open(metadata_file, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+    except Exception:
+        return jsonify([])
+    
+    rows = []
+    corpus_dir = Path("data/corpus")
+    
+    for key, data in metadata.items():
+        # Apply search filter if provided
+        if q and q not in key.lower() and q not in json.dumps(data).lower():
+            continue
+        
+        # Trouver le fichier dans le corpus
+        file_path = data.get('path')
+        if not file_path or not Path(file_path).exists():
+            # Chercher dans le corpus
+            found = list(corpus_dir.rglob(key))
+            if found:
+                file_path = str(found[0].resolve())
+            else:
+                file_path = None
+        
+        # Calculer le chemin relatif pour le téléchargement/visualisation
+        corpus_relpath = data.get('corpus_relpath')
+        if not corpus_relpath and file_path:
             try:
-                text = extract_text(path)
-            except Exception:
-                text = ''
-            return jsonify({'filename': filename, 'text': text})
-
-    # Not found in index: try to locate in uploads folder
-    for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
-        if filename in files:
-            path = os.path.join(root, filename)
-            try:
-                text = extract_text(path)
-            except Exception:
-                text = ''
-            return jsonify({'filename': filename, 'text': text})
-
-    return jsonify({'error': 'File not found'}), 404
+                corpus_relpath = str(Path(file_path).resolve().relative_to(corpus_dir.resolve())).replace('\\', '/')
+            except:
+                corpus_relpath = key
+        elif not corpus_relpath:
+            corpus_relpath = key
+        
+        rows.append({
+            'filename': key,
+            'name': key,
+            'type': data.get('type'),
+            'size': data.get('size', 0),
+            'num_pages': data.get('num_pages'),
+            'word_count': data.get('total_tokens_after'),
+            'characters': data.get('char_count_after'),
+            'date_import': data.get('date_import', 'Inconnue'),
+            'path': file_path,
+            'corpus_relpath': corpus_relpath,
+            'cleaned_text': (data.get('context', '')[:300]) if data.get('context') else ''
+        })
+    
+    return jsonify(rows)
 
 
 @app.route('/api/admin/delete', methods=['POST'])
-@check_admin
-def delete_file():
-    """Delete a file from index and uploads."""
-    data = request.get_json() or {}
-    filename = data.get('filename')
+def admin_delete():
+    """Delete a document by filename."""
+    payload = request.get_json(silent=True) or {}
+    filename = payload.get('filename')
+    
+    print(f"[DELETE] Demande de suppression pour: {filename}")
     
     if not filename:
-        return jsonify({'error': 'No filename provided'}), 400
+        return jsonify({'error': 'filename required'}), 400
     
-    # Remove from JSON
+    metadata_file = Path("data/processed/metadata.json")
+    corpus_dir = Path("data/corpus")
+    
+    if metadata_file.exists():
+        try:
+            with open(metadata_file, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+        except Exception:
+            metadata = {}
+    else:
+        metadata = {}
+    
+    deleted_files = []
+    
     try:
-        if os.path.exists(DATA_JSON):
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                file_data = json.load(f)
-            new_data = [d for d in file_data if d.get('filename') != filename]
-            with open(DATA_JSON, 'w', encoding='utf-8') as f:
-                json.dump(new_data, f, ensure_ascii=False, indent=2)
+        # Delete processed files
+        raw_file = Path("data/processed/raw_texts") / f"{filename}.txt"
+        clean_file = Path("data/processed/clean_texts") / f"{filename}.txt"
+        for p in [raw_file, clean_file]:
+            if p.exists():
+                p.unlink()
+                deleted_files.append(str(p))
+                print(f"[DELETE] Supprimé: {p}")
+        
+        # Delete original file from corpus
+        found = None
+        for f in corpus_dir.rglob("*"):
+            if f.is_file() and f.name == filename:
+                found = f
+                break
+        
+        if found:
+            found.unlink()
+            deleted_files.append(str(found))
+            print(f"[DELETE] Supprimé du corpus: {found}")
+        else:
+            print(f"[DELETE] Fichier non trouvé dans corpus: {filename}")
+        
+        # Remove from metadata
+        if filename in metadata:
+            metadata.pop(filename)
+            print(f"[DELETE] Retiré des métadonnées: {filename}")
+        else:
+            print(f"[DELETE] Pas dans les métadonnées: {filename}")
+        
+        # Save updated metadata
+        metadata_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=4)
+        
+        print(f"[DELETE] Suppression terminée. Fichiers supprimés: {deleted_files}")
+        return jsonify({
+            'message': f'Deleted {filename}',
+            'deleted_files': deleted_files,
+            'success': True
+        })
     except Exception as e:
+        print(f"[DELETE] Erreur: {str(e)}")
         return jsonify({'error': str(e)}), 500
-    
-    # Remove file from uploads
-    for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
-        if filename in files:
-            try:
-                os.remove(os.path.join(root, filename))
-            except Exception:
-                pass
-    
-    return jsonify({'message': 'File deleted'})
 
 
 @app.route('/api/admin/download', methods=['GET'])
-@check_admin
-def download_file():
-    """Download a file."""
+def admin_download():
+    """Download a file from corpus."""
     path = request.args.get('path')
-    if path and os.path.exists(path):
-        return send_file(path, as_attachment=True)
-    return jsonify({'error': 'File not found'}), 404
-
-
-# === Client Routes ===
-@app.route('/api/search', methods=['GET'])
-@check_auth
-def search():
-    """Search in indexed lemmas."""
-    q = request.args.get('q', '').strip().lower()
-    mode = request.args.get('mode', 'or')
+    if not path:
+        return jsonify({'error': 'path required'}), 400
     
-    # Map 'all_words' to 'and' for consistency with frontend
-    if mode == 'all_words':
-        mode = 'and'
-    
-    results = []
-    
-    if os.path.exists(DATA_JSON) and q:
-        try:
-            with open(DATA_JSON, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except Exception:
-            data = []
+    try:
+        corpus_dir = Path("data/corpus")
+        file_path = Path(path)
         
-        terms = [t.strip() for t in q.split() if t.strip()]
+        # Si le path est absolu et existe, l'utiliser
+        if file_path.is_absolute() and file_path.exists():
+            return send_from_directory(file_path.parent, file_path.name, as_attachment=True)
         
-        for file_item in data:
-            lemmas = file_item.get('lemmas', {})
-            matched = False
-            count = 0
-            
-            if mode == 'exact':
-                # Exact match: all terms must match exactly as a phrase
-                full_text = file_item.get('cleaned_text', '').lower()
-                if q in full_text:
-                    count = full_text.count(q)
-                    matched = True
-            elif mode == 'and':
-                # AND mode: all terms must be present
-                if all(lemmas.get(t, 0) > 0 for t in terms):
-                    count = sum(lemmas.get(t, 0) for t in terms)
-                    matched = True
-            else:  # 'or' mode (default)
-                # OR mode: at least one term must be present
-                count = sum(lemmas.get(t, 0) for t in terms)
-                if count > 0:
-                    matched = True
-            
-            if matched:
-                # Prepare words data for wordcloud (convert to list of [word, freq])
-                words_list = [[k, v] for k, v in lemmas.items()]
-                
-                results.append({
-                    'name': file_item.get('filename'),
-                    'filename': file_item.get('filename'),
-                    'path': file_item.get('path'),
-                    'type': file_item.get('type'),
-                    'size': file_item.get('size'),
-                    'num_pages': file_item.get('pages'),
-                    'word_count': file_item.get('word_count'),
-                    'characters': file_item.get('characters'),
-                    'date_import': file_item.get('imported_at') or file_item.get('date_import'),
-                    'count': count,
-                    'context': file_item.get('text_sample', ''),
-                    'words': words_list
-                })
+        # Sinon, chercher dans corpus en utilisant le path comme relatif
+        file_in_corpus = corpus_dir / path
+        if file_in_corpus.exists():
+            return send_from_directory(file_in_corpus.parent, file_in_corpus.name, as_attachment=True)
+        
+        # Dernier recours: chercher par nom de fichier
+        filename = Path(path).name
+        found = list(corpus_dir.rglob(filename))
+        if found:
+            fp = found[0]
+            return send_from_directory(fp.parent, fp.name, as_attachment=True)
+        
+        return jsonify({'error': f'File not found: {path}'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        # If query is short or no lemma-based results, try substring search
-        if q and (len(q) <= 1 or len(results) == 0):
-            for file_item in data:
-                txt = (file_item.get('text_sample') or '').lower()
-                if q in txt:
-                    # avoid duplicates
-                    if not any(r['filename'] == file_item.get('filename') for r in results):
-                        words_list = [[k, v] for k, v in file_item.get('lemmas', {}).items()]
-                        results.append({
-                            'name': file_item.get('filename'),
-                            'filename': file_item.get('filename'),
-                            'path': file_item.get('path'),
-                            'type': file_item.get('type'),
-                            'size': file_item.get('size'),
-                            'num_pages': file_item.get('pages'),
-                            'word_count': file_item.get('word_count'),
-                            'characters': file_item.get('characters'),
-                            'date_import': file_item.get('imported_at') or file_item.get('date_import'),
-                            'count': 0,
-                            'context': file_item.get('text_sample', ''),
-                            'words': words_list
-                        })
 
-    return jsonify({'results': results, 'query': q})
+@app.route('/api/admin/file_stats', methods=['GET'])
+def admin_file_stats():
+    """Return per-file detailed statistics."""
+    filename = request.args.get('filename')
+    if not filename:
+        return jsonify({'error': 'filename required'}), 400
+    
+    metadata_file = Path("data/processed/metadata.json")
+    if not metadata_file.exists():
+        return jsonify({'error': 'No metadata found'}), 404
+    
+    try:
+        with open(metadata_file, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    data = metadata.get(filename, {})
+    if not data:
+        return jsonify({'error': f'{filename} not found'}), 404
+    
+    return jsonify({
+        'filename': filename,
+        'type': data.get('type'),
+        'total_tokens_before': data.get('total_tokens_before'),
+        'total_tokens_after': data.get('total_tokens_after'),
+        'char_count_before': data.get('char_count_before'),
+        'char_count_after': data.get('char_count_after'),
+        'words': data.get('words', [])[:50],  # Top 50
+        'bigrams': data.get('bigrams', [])[:50],  # Top 50
+    })
+
+
+@app.route('/api/admin/file_detail', methods=['GET'])
+def admin_file_detail():
+    """Return detailed file information for display."""
+    filename = request.args.get('filename')
+    if not filename:
+        return jsonify({'error': 'filename required'}), 400
+    
+    metadata_file = Path("data/processed/metadata.json")
+    if not metadata_file.exists():
+        return jsonify({'error': 'No metadata found'}), 404
+    
+    try:
+        with open(metadata_file, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+    except Exception:
+        return jsonify({'error': 'Failed to load metadata'}), 500
+    
+    data = metadata.get(filename, {})
+    if not data:
+        return jsonify({'error': f'{filename} not found'}), 404
+    
+    return jsonify({
+        'filename': filename,
+        'type': data.get('type'),
+        'date_import': data.get('date_import', 'Inconnue'),
+        'num_pages': data.get('num_pages'),
+        'total_tokens_after': data.get('total_tokens_after'),
+        'char_count_after': data.get('char_count_after'),
+        'context': data.get('context', '')[:1000],  # First 1000 chars
+        'words': data.get('words', [])[:30],
+        'bigrams': data.get('bigrams', [])[:30],
+        'thumbnail': data.get('thumbnail'),
+    })
+
+
+@app.route('/api/admin/view', methods=['GET'])
+def admin_view():
+    """View/serve the original file (PDF, TXT, etc.) from corpus."""
+    filename = request.args.get('filename')
+    if not filename:
+        return "<h1>Erreur</h1><p>Nom de fichier manquant</p>", 400
+    
+    corpus_dir = Path("data/corpus")
+    
+    # Chercher le fichier dans le corpus
+    found_file = None
+    for f in corpus_dir.rglob("*"):
+        if f.is_file() and f.name == filename:
+            found_file = f
+            break
+    
+    if not found_file:
+        return f"<h1>Erreur</h1><p>Fichier '{filename}' introuvable dans le corpus</p>", 404
+    
+    # Déterminer le type de fichier
+    file_ext = found_file.suffix.lower()
+    file_type = file_ext.lstrip('.')
+    
+    try:
+        # Pour les PDF, les servir directement
+        if file_type == 'pdf':
+            return send_from_directory(
+                found_file.parent,
+                found_file.name,
+                mimetype='application/pdf'
+            )
+        
+        # Pour les fichiers texte, HTML, lire et afficher dans une page
+        elif file_type in ['txt', 'html', 'htm']:
+            try:
+                with open(found_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            except UnicodeDecodeError:
+                # Essayer avec latin-1 si UTF-8 échoue
+                with open(found_file, 'r', encoding='latin-1') as f:
+                    content = f.read()
+            
+            # Pour HTML/HTM, servir directement
+            if file_type in ['html', 'htm']:
+                return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+            
+            # Pour TXT, créer une page HTML simple
+            html_content = f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{filename}</title>
+    <style>
+        body {{
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 30px;
+            background: #f5f5f5;
+        }}
+        .container {{
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        h1 {{
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }}
+        pre {{
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            color: #333;
+            font-size: 14px;
+        }}
+        .close-btn {{
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 20px;
+        }}
+        .close-btn:hover {{
+            background: #5568d3;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 {filename}</h1>
+        <pre>{content}</pre>
+        <button class="close-btn" onclick="window.close()">Fermer</button>
+    </div>
+</body>
+</html>
+"""
+            return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+        
+        # Pour DOCX et autres formats, télécharger le fichier
+        else:
+            return send_from_directory(
+                found_file.parent,
+                found_file.name,
+                as_attachment=False
+            )
+    
+    except Exception as e:
+        return f"<h1>Erreur</h1><p>Impossible d'ouvrir le fichier: {str(e)}</p>", 500
 
 
 @app.route('/api/wordcloud', methods=['GET'])
-@check_auth
-def get_wordcloud():
-    """Get wordcloud image path."""
-    wc_path = 'static/wordclouds/wordcloud.png'
-    if os.path.exists(wc_path):
-        return jsonify({'path': wc_path})
-    return jsonify({'path': None})
+def wordcloud():
+    """Return wordcloud data (top words)."""
+    from services.visualisation_service import compute_visualisation_data
+    
+    viz_data = compute_visualisation_data()
+    top_words = viz_data.get('top_words', [])
+    
+    # Format for wordcloud: {"word": count, ...}
+    wordcloud_dict = {word: count for word, count in top_words}
+    
+    return jsonify(wordcloud_dict)
 
 
-# === Health Check ===
-@app.route('/api/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'ok'})
-
-
-if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=5000)
+if __name__ == "__main__":
+    # Start server on localhost:5000
+    app.run(host="0.0.0.0", port=5000, debug=True)

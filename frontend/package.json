@@ -21,12 +21,14 @@
     "tippy.js": "^6.3.7",
     "@tippyjs/react": "^4.2.6"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
+"scripts": {
+  "start": "react-scripts start",
+  "build": "react-scripts build",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject",
+  "debug": "node --inspect node_modules/react-scripts/scripts/start.js"
+}
+,
   "eslintConfig": {
     "extends": [
       "react-app"

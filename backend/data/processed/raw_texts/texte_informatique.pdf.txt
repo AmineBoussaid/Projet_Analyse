@@ -1,0 +1,67 @@
+L’informatique est la science qui étudie le traitement automatique de 
+l’information à l’aide de machines, en particulier des ordinateurs. Elle 
+repose sur la capacité à représenter les données sous une forme que les 
+machines peuvent comprendre, à les manipuler selon des instructions 
+précises et à produire des résultats utiles à l’être humain. Ses origines 
+remontent bien avant l’apparition des ordinateurs modernes, avec les 
+premières tentatives de calcul mécanique au XVIIᵉ siècle, comme la 
+machine de Pascal ou celle de Leibniz. Au XXᵉ siècle, les progrès en 
+électronique et en mathématiques ont permis la naissance de 
+l’informatique telle qu’on la connaît, notamment avec les travaux d’Alan 
+Turing, qui a défini les bases théoriques de la machine programmable. 
+ 
+L’évolution de l’informatique a connu plusieurs grandes étapes : les 
+premiers ordinateurs, gigantesques et réservés à la recherche ou à 
+l’armée, ont laissé place à des machines plus petites, plus puissantes et 
+accessibles au grand public. L’invention du microprocesseur dans les 
+années 1970 a marqué le début de l’ère de l’ordinateur personnel, 
+transformant profondément la société. Depuis, l’informatique s’est 
+étendue à tous les domaines : la médecine, l’industrie, l’éducation, la 
+communication, et bien sûr le divertissement. L’arrivée d’Internet et des 
+réseaux mondiaux a ouvert une nouvelle ère, celle de l’information 
+instantanée et du partage global. 
+ 
+Aujourd’hui, l’informatique est au cœur du monde moderne. Elle ne se 
+limite plus aux ordinateurs, mais s’étend aux téléphones, aux objets 
+connectés, aux véhicules et même aux infrastructures publiques. Les 
+domaines de recherche comme l’intelligence artificielle, la cybersécurité 
+ou le calcul quantique repoussent sans cesse les limites de ce qui est 
+possible. L’informatique a également un impact social et éthique 
+important, soulevant des questions sur la vie privée, la dépendance aux 
+technologies et la place de l’humain face aux machines. En définitive, 
+l’informatique n’est pas seulement une science technique : c’est un 
+moteur de transformation du monde, qui influence la manière dont les 
+hommes communiquent, travaillent, apprennent et imaginent l’avenir. 
+
+L’informatique est la science qui étudie le traitement automatique de
+l’information à l’aide de machines, en particulier des ordinateurs. Elle
+repose sur la capacité à représenter les données sous une forme que les
+machines peuvent comprendre, à les manipuler selon des instructions
+précises et à produire des résultats utiles à l’être humain. Ses origines
+remontent bien avant l’apparition des ordinateurs modernes, avec les
+premières tentatives de calcul mécanique au XVIIᵉ siècle, comme la
+machine de Pascal ou celle de Leibniz. Au XXᵉ siècle, les progrès en
+électronique et en mathématiques ont permis la naissance de
+l’informatique telle qu’on la connaît, notamment avec les travaux d’Alan
+Turing, qui a défini les bases théoriques de la machine programmable.
+L’évolution de l’informatique a connu plusieurs grandes étapes : les
+premiers ordinateurs, gigantesques et réservés à la recherche ou à
+l’armée, ont laissé place à des machines plus petites, plus puissantes et
+accessibles au grand public. L’invention du microprocesseur dans les
+années 1970 a marqué le début de l’ère de l’ordinateur personnel,
+transformant profondément la société. Depuis, l’informatique s’est
+étendue à tous les domaines : la médecine, l’industrie, l’éducation, la
+communication, et bien sûr le divertissement. L’arrivée d’Internet et des
+réseaux mondiaux a ouvert une nouvelle ère, celle de l’information
+instantanée et du partage global.
+Aujourd’hui, l’informatique est au cœur du monde moderne. Elle ne se
+limite plus aux ordinateurs, mais s’étend aux téléphones, aux objets
+connectés, aux véhicules et même aux infrastructures publiques. Les
+domaines de recherche comme l’intelligence artificielle, la cybersécurité
+ou le calcul quantique repoussent sans cesse les limites de ce qui est
+possible. L’informatique a également un impact social et éthique
+important, soulevant des questions sur la vie privée, la dépendance aux
+technologies et la place de l’humain face aux machines. En définitive,
+l’informatique n’est pas seulement une science technique : c’est un
+moteur de transformation du monde, qui influence la manière dont les
+hommes communiquent, travaillent, apprennent et imaginent l’avenir.

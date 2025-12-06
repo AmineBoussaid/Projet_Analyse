@@ -1,3 +1,5 @@
+
+
 # Python bytecode
 __pycache__/
 *.py[cod]
@@ -8,6 +10,7 @@ __pycache__/
 .venv/
 ENV/
 env/
+*data
 
 # IDE
 .vscode/
@@ -15,6 +18,7 @@ env/
 *.swp
 
 # Data files
+data/
 data/temp_texts.json
 *.db
 *.sqlite

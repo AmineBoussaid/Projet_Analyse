@@ -147,7 +147,7 @@ export function AdminStats() {
               {
                 icon: '💾',
                 label: 'Taille Totale',
-                value: stats.total_size 
+                value: stats.total_size != null && stats.total_size > 0
                   ? (stats.total_size < 1024 * 1024 
                       ? `${(stats.total_size / 1024).toFixed(2)} Ko` 
                       : `${(stats.total_size / (1024 * 1024)).toFixed(2)} Mo`)
@@ -158,8 +158,8 @@ export function AdminStats() {
               {
                 icon: '⏱️',
                 label: 'Dernier Import',
-                value: stats.last_import 
-                  ? new Date(stats.last_import).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                value: stats.last_import && stats.last_import !== 'N/A' && stats.last_import !== 'Aucun'
+                  ? (stats.last_import.includes('-') ? new Date(stats.last_import).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : stats.last_import)
                   : 'N/A',
                 color: '#f5576c',
                 lightColor: '#ffe0e6'

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { fetchDocuments, deleteDocuments, getDownloadUrl } from "../api/documentApi";
-import ReprocessModal from "../components/ReprocessModal";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function DocumentsView() {
@@ -9,11 +8,6 @@ export default function DocumentsView() {
   const [error, setError] = useState(null);
   const [q, setQ] = useState("");
   const [sort, setSort] = useState({ key: "name", dir: "asc" });
-  const [reprocessLoading, setReprocessLoading] = useState(false);
-  const [showReprocessModal, setShowReprocessModal] = useState(false);
-  const [reprocessProgress, setReprocessProgress] = useState(0);
-  const [reprocessElapsedTime, setReprocessElapsedTime] = useState(0);
-  const [reprocessAbortController, setReprocessAbortController] = useState(null);
   const [notice, setNotice] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
@@ -35,16 +29,6 @@ export default function DocumentsView() {
       setLoading(false);
     })();
   }, []);
-
-  useEffect(() => {
-    let timer;
-    if (reprocessLoading) {
-      timer = setInterval(() => {
-        setReprocessElapsedTime(prevTime => prevTime + 1000);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [reprocessLoading]);
 
   useEffect(() => {
     setPage(1);
@@ -147,72 +131,10 @@ export default function DocumentsView() {
     }
   };
 
-  const handleReprocess = async () => {
-    const ok = window.confirm('Confirmer le recalcul complet de tout le corpus ? Cela peut prendre du temps.');
-    if (!ok) return;
-
-    setNotice(null);
-    setReprocessLoading(true);
-    setShowReprocessModal(true);
-    setReprocessProgress(0);
-    setReprocessElapsedTime(0);
-
-    const abortController = new AbortController();
-    setReprocessAbortController(abortController);
-
-    const progressInterval = setInterval(() => {
-      setReprocessProgress(p => Math.min(p + 5, 95));
-    }, 500);
-
-    try {
-      const res = await fetch('/api/upload?reprocess_all=true', { 
-        method: 'POST',
-        signal: abortController.signal 
-      });
-
-      clearInterval(progressInterval);
-      setReprocessProgress(100);
-
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setNotice({ type: 'danger', message: `Erreur reprocess_all: ${json.error || res.status}` });
-      } else {
-        try {
-          setLoading(true);
-          const data = await fetchDocuments();
-          setRows(Array.isArray(data) ? data : []);
-        } finally {
-          setLoading(false);
-        }
-        if (json.summary) {
-          setNotice({ type: 'success', message: `Reprocess terminé. Nouveaux: ${json.summary.new || 0}, Mis à jour: ${json.summary.updated || 0}` });
-        } else {
-          setNotice({ type: 'success', message: 'Reprocess complet terminé.' });
-        }
-      }
-    } catch (e) {
-      clearInterval(progressInterval);
-      if (e.name === 'AbortError') {
-        setNotice({ type: 'info', message: 'Le retraitement a été annulé.' });
-      } else {
-        setNotice({ type: 'danger', message: `Exception reprocess_all: ${e.message}` });
-      }
-    } finally {
-      setReprocessLoading(false);
-      setShowReprocessModal(false);
-      setReprocessAbortController(null);
-    }
-  };
-
-  const cancelReprocess = () => {
-    if (reprocessAbortController) {
-      reprocessAbortController.abort();
-    }
-  };
 
   return (
     <div className="container py-4">
-      <h3 className="mb-3">📄 Documents (Admin)</h3>
+      <h3 className="mb-3">📄 Documentsss (Admin)</h3>
 
       <div className="d-flex flex-wrap align-items-center mb-2 gap-2">
         <input

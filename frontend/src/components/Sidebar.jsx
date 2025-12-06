@@ -20,7 +20,7 @@ export default function Sidebar({ role, onLogout, isOpen, toggleSidebar }) {
     { path: '/admin', label: 'Accueil', icon: Home },
     { path: '/admin/import', label: 'Importer', icon: Upload },
     { path: '/admin/manage', label: 'Gérer les Documents', icon: FileText },
-    { path: '/admin/visualisation', label: 'Statistiques', icon: BarChart3 },
+    { path: '/admin/stats', label: 'Statistiques', icon: BarChart3 },
   ];
 
   const userLinks = [

@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import UploadView from './views/UploadView';
-import DocumentsView from './views/DocumentsView';
+import { AdminImport } from './pages/AdminImport';
+import { AdminManage } from './pages/AdminManage';
+import { AdminStats } from './pages/AdminStats';
 import IndexationView from './views/IndexationView';
-import VisualisationView from './views/VisualisationView';
-import ResultsDetailView from './views/ResultsDetailView';
+import { DocumentDetail } from './pages/DocumentDetail';
 import './App.css';
 
 function App() {
@@ -63,11 +63,10 @@ function App() {
               {/* Admin Routes */}
               {role === 'admin' && (
                 <>
-                  <Route path="/admin/import" element={<UploadView />} />
-                  <Route path="/admin/manage" element={<DocumentsView />} />
-                  <Route path="/admin/indexation" element={<IndexationView />} />
-                  <Route path="/admin/visualisation" element={<VisualisationView />} />
-                  <Route path="/admin/results-detail" element={<ResultsDetailView />} />
+                  <Route path="/admin/import" element={<AdminImport />} />
+                  <Route path="/admin/manage" element={<AdminManage />} />
+                  <Route path="/admin/stats" element={<AdminStats />} />
+                  <Route path="/admin/document/:filename" element={<DocumentDetail />} />
                   <Route path="/admin" element={<Navigate to="/admin/import" />} />
                 </>
               )}

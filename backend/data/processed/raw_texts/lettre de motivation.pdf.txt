@@ -1,0 +1,64 @@
+LETTRE DE MOTIVATION  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    
+Objet : Candidature au poste de stagiaire Développeur Full Stack – Dassault Systèmes 
+ 
+Madame, Monsieur, 
+Actuellement étudiant en Master 2 Informatique – Technologies de l’Hypermédia (THYP) à 
+l’Université Paris 8, je suis à la recherche d’un stage de fin d’études à partir de janvier 2025. 
+Passionné par le développement logiciel et les architectures modernes, je souhaite vivement 
+rejoindre Dassault Systèmes, acteur reconnu de l’innovation technologique, afin de contribuer à des 
+projets ambitieux et à forte valeur ajoutée. 
+Au cours de mes stages précédents, j’ai participé à la conception et au développement d’applications 
+web et mobiles en environnement Full Stack. J’ai notamment travaillé sur des projets utilisant 
+Angular, Spring Boot, React, Flask et .NET Core, en mettant en œuvre des concepts tels que le Clean 
+Code, l’architecture 3-tiers et la sécurité applicative (JWT). Ces expériences m’ont permis d’acquérir 
+une bonne maîtrise des langages Java, TypeScript, JavaScript et Python, ainsi qu’une solide 
+compréhension des bases de données SQL. 
+Rigoureux, curieux et à l’aise dans le travail en équipe, je m’adapte rapidement à de nouveaux 
+environnements techniques et méthodologiques. Intégrer la Digital Factory de Dassault Systèmes 
+représenterait pour moi une réelle opportunité d’évoluer au sein d’une équipe innovante, de 
+perfectionner mes compétences en développement Full Stack et d’explorer davantage les 
+technologies liées à l’intelligence artificielle et à la qualité logicielle. 
+Je serais honoré de pouvoir contribuer à vos projets et de participer activement à l’amélioration 
+continue des outils et solutions développés par vos équipes. 
+Je vous remercie pour l’attention portée à ma candidature. 
+Cordialement, 
+Amine Boussaid 
+boussaid.amine01@gmail.com |  07 58 35 84 81 | Paris / Île-de-France 
+ 
+
+LETTRE DE MOTIVATION
+Objet : Candidature au poste de stagiaire Développeur Full Stack – Dassault Systèmes
+Madame, Monsieur,
+Actuellement étudiant en Master 2 Informatique – Technologies de l’Hypermédia (THYP) à
+l’Université Paris 8, je suis à la recherche d’un stage de fin d’études à partir de janvier 2025.
+Passionné par le développement logiciel et les architectures modernes, je souhaite vivement
+rejoindre Dassault Systèmes, acteur reconnu de l’innovation technologique, afin de contribuer à des
+projets ambitieux et à forte valeur ajoutée.
+Au cours de mes stages précédents, j’ai participé à la conception et au développement d’applications
+web et mobiles en environnement Full Stack. J’ai notamment travaillé sur des projets utilisant
+Angular, Spring Boot, React, Flask et .NET Core, en mettant en œuvre des concepts tels que le Clean
+Code, l’architecture 3-tiers et la sécurité applicative (JWT). Ces expériences m’ont permis d’acquérir
+une bonne maîtrise des langages Java, TypeScript, JavaScript et Python, ainsi qu’une solide
+compréhension des bases de données SQL.
+Rigoureux, curieux et à l’aise dans le travail en équipe, je m’adapte rapidement à de nouveaux
+environnements techniques et méthodologiques. Intégrer la Digital Factory de Dassault Systèmes
+représenterait pour moi une réelle opportunité d’évoluer au sein d’une équipe innovante, de
+perfectionner mes compétences en développement Full Stack et d’explorer davantage les
+technologies liées à l’intelligence artificielle et à la qualité logicielle.
+Je serais honoré de pouvoir contribuer à vos projets et de participer activement à l’amélioration
+continue des outils et solutions développés par vos équipes.
+Je vous remercie pour l’attention portée à ma candidature.
+Cordialement,
+Amine Boussaid
+boussaid.amine01@gmail.com | 07 58 35 84 81 | Paris / Île-de-France

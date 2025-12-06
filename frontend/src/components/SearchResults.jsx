@@ -2,15 +2,20 @@ import React, { useState } from "react";
 import { getDownloadUrl } from "../api/documentApi";
 import { WordCloud } from "@isoterik/react-word-cloud";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Modal } from "./Modal";
 
 export default function SearchResults({ results = [], query = "", onWordClick = null }) {
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 5;
+  const [selectedWordCloud, setSelectedWordCloud] = useState(null);
+
+  // Ensure results is an array
+  const resultsArray = Array.isArray(results) ? results : (typeof results === 'object' && results !== null ? Object.entries(results).map(([filename, data]) => ({ filename, ...data })) : []);
 
   const indexOfLast = currentPage * resultsPerPage;
   const indexOfFirst = indexOfLast - resultsPerPage;
-  const currentResults = results.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(results.length / resultsPerPage);
+  const currentResults = resultsArray.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(resultsArray.length / resultsPerPage);
 
   const extractSnippet = (text = "", query, windowSize = 40) => {
     const words = text.split(/\s+/);
@@ -36,13 +41,30 @@ export default function SearchResults({ results = [], query = "", onWordClick = 
   };
 
   const formatWords = (wordsArray = []) => {
-    return wordsArray
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 100)
-      .map(([text, value]) => ({
+    if (!wordsArray || wordsArray.length === 0) return [];
+    
+    // Trier par fréquence décroissante
+    const sorted = [...wordsArray].sort((a, b) => b[1] - a[1]);
+    
+    // Prendre les 100 premiers
+    const topWords = sorted.slice(0, 100);
+    
+    // Trouver la valeur max pour normaliser
+    const maxValue = topWords[0]?.[1] || 1;
+    const minValue = topWords[topWords.length - 1]?.[1] || 1;
+    
+    // Mapper avec une échelle logarithmique pour plus de contraste
+    return topWords.map(([text, value]) => {
+      // Normaliser entre 0 et 1
+      const normalized = (value - minValue) / (maxValue - minValue + 1);
+      // Appliquer une échelle exponentielle pour accentuer les différences
+      const scaledValue = Math.pow(normalized, 0.6) * 100 + 10;
+      
+      return {
         text,
-        value: Math.max(value * 10, 500),
-      }));
+        value: scaledValue
+      };
+    });
   };
 
   return (
@@ -55,7 +77,7 @@ export default function SearchResults({ results = [], query = "", onWordClick = 
       ) : (
         <>
           <div style={{ fontSize: '0.875rem', color: '#70757a', marginBottom: '20px' }}>
-            Environ {results.length} résultat{results.length > 1 ? 's' : ''}
+            Environ {resultsArray.length} résultat{resultsArray.length > 1 ? 's' : ''}
           </div>
           {currentResults.map((item, idx) => (
             <div key={idx} className="mb-4" style={{ 
@@ -73,20 +95,20 @@ export default function SearchResults({ results = [], query = "", onWordClick = 
                       fontWeight: '400'
                     }}
                     onClick={() => {
-                      const url = getDownloadUrl(item.name);
+                      const url = getDownloadUrl(item.filename || item.name);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = item.name;
+                      a.download = item.filename || item.name;
                       a.target = '_blank';
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
                     }}
                   >
-                    {item.name || "Sans nom"}
+                    {item.filename || item.name || "Sans nom"}
                   </h5>
                   <div style={{ fontSize: '0.875rem', color: '#70757a', marginBottom: '4px' }}>
-                    📅 {item.date_import || '—'} · <strong>Pages:</strong> {item.num_pages ?? '—'} · <strong>Taille:</strong> {typeof item.size === 'number' ? (item.size / (1024*1024)).toFixed(2) + ' Mo' : '—'}
+                    📅 {item.date_import || '—'} · <strong>Type:</strong> {item.type || '—'} · <strong>Tokens:</strong> {item.total_tokens_after || 0}
                   </div>
                 </div>
               </div>
@@ -102,30 +124,13 @@ export default function SearchResults({ results = [], query = "", onWordClick = 
 
               {item.words && item.words.length > 0 && (
                 <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem', color: '#333' }}>
-                    ☁️ Nuage de mots - Cliquez pour rechercher
-                  </div>
-                  <div style={{ 
-                    width: '100%', 
-                    height: '250px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '6px',
-                    padding: '10px',
-                    background: '#f9f9f9'
-                  }}>
-                    <WordCloud
-                      words={formatWords(item.words)}
-                      width={500}
-                      height={230}
-                      padding={0}
-                      enableTooltip={true}
-                      onWordClick={(w) => { 
-                        if (onWordClick) {
-                          onWordClick(w.text || w);
-                        }
-                      }}
-                    />
-                  </div>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setSelectedWordCloud(item)}
+                    style={{ borderRadius: '20px', fontSize: '0.85rem', padding: '6px 16px' }}
+                  >
+                    ☁️ Voir le nuage de mots
+                  </button>
                 </div>
               )}
             </div>
@@ -206,6 +211,49 @@ export default function SearchResults({ results = [], query = "", onWordClick = 
             ▶
           </button>
         </div>
+      )}
+
+      {selectedWordCloud && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedWordCloud(null)}
+          title={`Nuage de mots - ${selectedWordCloud.filename || selectedWordCloud.name || 'Document'}`}
+          width="900px"
+        >
+          <div>
+            <p style={{ marginBottom: '16px', color: '#666', fontSize: '0.9rem' }}>
+              💡 <strong>Astuce:</strong> Cliquez sur un mot pour l'ajouter à votre recherche. La fenêtre reste ouverte pour sélectionner plusieurs mots.
+            </p>
+            <div style={{ 
+              width: '100%', 
+              height: '500px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              borderRadius: '12px',
+              padding: '20px',
+              border: '2px solid #e0e0e0',
+              boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.1)'
+            }}>
+              <WordCloud
+                words={formatWords(selectedWordCloud.words)}
+                width={800}
+                height={460}
+                padding={3}
+              />
+            </div>
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => setSelectedWordCloud(null)}
+                style={{ borderRadius: '20px', fontSize: '0.9rem', padding: '8px 24px' }}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

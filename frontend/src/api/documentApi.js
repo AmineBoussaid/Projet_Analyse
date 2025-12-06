@@ -10,7 +10,8 @@ export async function uploadFiles(files) {
   const formData = new FormData();
   for (let f of files) formData.append("files", f);
 
-  const res = await fetch(`${API_BASE}/admin/upload`, {
+  // Backend route is /api/upload (no /admin prefix)
+  const res = await fetch(`${API_BASE}/upload`, {
     method: "POST",
     headers: getRoleHeader(),
     body: formData,

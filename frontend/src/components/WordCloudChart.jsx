@@ -19,12 +19,7 @@ export default function WordCloudChart({ words = [] }) {
         words={formattedWords}
         width={700}
         height={350}
-        padding={0}
-        enableTooltip={true}
-        rotate={(word) => {
-          const rotations = [0, 15, 30, 45, -15, -30, -45, 60, -60, 90, -90];
-          return rotations[Math.floor(Math.random() * rotations.length)];
-        }}
+        padding={3}
       />
     </div>
   );

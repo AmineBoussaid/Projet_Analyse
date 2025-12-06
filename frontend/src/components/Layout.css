@@ -68,7 +68,7 @@
 .main-content {
   flex: 1;
   max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+  margin-left: 220px;
+  width: calc(100% - 220px);
   padding: 40px 30px;
 }

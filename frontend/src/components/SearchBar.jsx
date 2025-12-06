@@ -161,7 +161,7 @@ export default function SearchBar({ onSearch, inputValue = null, onInputChange =
       <select
         className="form-select"
         style={{ 
-          maxWidth: "180px",
+          maxWidth: "200px",
           border: '1px solid #dfe1e5',
           borderRadius: '24px',
           padding: '8px 16px',
@@ -174,9 +174,9 @@ export default function SearchBar({ onSearch, inputValue = null, onInputChange =
           else setMode(e.target.value);
         }}
       >
-        <option value="all_words">∀ ET - Tous les mots</option>
-        <option value="or">∃ OU - N'importe quel mot</option>
-        <option value="exact">= Exact</option>
+        <option value="all_words_and">∀ Tous les mots (ET)</option>
+        <option value="or">∃ N'importe quel mot (OU)</option>
+        <option value="exact">= Phrase exacte</option>
       </select>
     </form>
   );

@@ -31,7 +31,10 @@ export function UserSearch() {
         params: { q: searchTerm },
         headers: { 'X-Role': 'user', 'Authorization': `Bearer ${token}` }
       });
-      setResults(response.data);
+      // Backend returns {results: {filename: {...}}, suggestions: []}
+      // Convert object to array of entries for rendering
+      const resultsArray = response.data.results ? Object.entries(response.data.results).map(([filename, data]) => ({ filename, ...data })) : [];
+      setResults(resultsArray);
     } catch (err) {
       setError('Erreur lors de la recherche');
       console.error(err);

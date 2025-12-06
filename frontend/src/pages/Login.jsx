@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
 import './Login.css';
 
@@ -7,19 +6,17 @@ export default function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [hoveredRole, setHoveredRole] = useState(null);
 
-  const handleLogin = async (role) => {
-    try {
-      setLoading(true);
-      const response = await axios.post('http://localhost:5000/api/login', { role });
+  const handleLogin = (role) => {
+    // Connexion logique sans vérification backend
+    setLoading(true);
+    
+    // Simuler un léger délai pour l'UX
+    setTimeout(() => {
       localStorage.setItem('userRole', role);
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('token', `fake-token-${role}-${Date.now()}`);
       onLoginSuccess(role);
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Erreur de connexion');
-    } finally {
       setLoading(false);
-    }
+    }, 500);
   };
 
   return (

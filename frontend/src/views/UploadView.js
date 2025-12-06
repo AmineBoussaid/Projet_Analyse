@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import FileUploader from "../components/FileUploader";
-import { deleteDocuments, uploadFiles, getDownloadUrl } from "../api/documentApi";
+import { deleteDocuments, uploadFiles } from "../api/documentApi";
 
 const PAGE_SIZE = 10;
 

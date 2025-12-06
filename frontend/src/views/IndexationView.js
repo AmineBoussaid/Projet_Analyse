@@ -6,7 +6,7 @@ export default function IndexationView() {
   const [results, setResults] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('or');
+  const [mode, setMode] = useState('all_words_and');
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [availableTypes, setAvailableTypes] = useState([]);
 
@@ -26,12 +26,12 @@ export default function IndexationView() {
 
   const handleSearch = async (q, mode) => {
     setQuery(q);
-    setMode(mode || 'or');
+    setMode(mode || 'all_words_and');
     setLoading(true);
     try {
       const typesParam = selectedTypes.length > 0 ? `&types=${selectedTypes.join(',')}` : '';
       const response = await fetch(
-        `/api/search?q=${encodeURIComponent(q)}&mode=${mode}${typesParam}`,
+        `/api/search?q=${encodeURIComponent(q)}&mode=${mode || 'all_words_and'}${typesParam}`,
         { headers: { 'X-Role': 'user' } }
       );
       const data = await response.json();
